@@ -32,10 +32,12 @@ public class TrackerConnection {
     }
 
     public void connect() {
+        logger.debug("Attempting to connect to the tracker server");
         try {
             socket = new Socket(host, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new Scanner(socket.getInputStream());
+            logger.info("Connected to the tracker server");
         } catch (IOException e) {
             logger.error("Connecting to tracker server failed", e);
             disconnect();
@@ -43,6 +45,7 @@ public class TrackerConnection {
     }
     
     public void disconnect() {
+        logger.info("Disconnecting from the tracker server");
         if (socket != null)
             try {
                 socket.close();
@@ -82,6 +85,10 @@ public class TrackerConnection {
             if (line.contains("ID=\"CALIB_RESULT\""))
                 break;
         } while (true);
+        
+        // Show summary
+        String summary = get("CALIBRATE_RESULT_SUMMARY");
+        logger.info("Calibration result: {}", summary);
 
         set("CALIBRATE_START", "0");
         set("CALIBRATE_SHOW", "0");
@@ -104,7 +111,7 @@ public class TrackerConnection {
         Pattern leye = Pattern.compile("LEYEV=\"(\\d+)\"");
         Pattern reye = Pattern.compile("REYEV=\"(\\d+)\"");
 
-        long vstart = -1;
+        Long vstart = null;
 
         do {
             String line = in.nextLine();
@@ -121,19 +128,19 @@ public class TrackerConnection {
             //System.out.printf("lv: %s; rv: %s\n", lv, rv);
 
             if ("1".equals(lv) && "1".equals(rv)) { // Valid?
-                if (vstart < 0) { // New validity period?
+                if (vstart == null) { // New validity period?
                     vstart = System.currentTimeMillis();
                     logger.debug("Tracker identified both eyes");
                 }
             } else {
-                if(vstart != -1)
+                if(vstart != null)
                     logger.debug("Tracker lost eyes");
                 
-                vstart = -1;
+                vstart = null;
             }
-        } while ((System.currentTimeMillis() - vstart) >= 3 * 1000);
+        } while (vstart == null || (System.currentTimeMillis() - vstart) <= 3 * 1000);
         
-        logger.info("Tracker sees both eyes");
+        logger.info("Tracker has seen both eyes for {} msec, OK", System.currentTimeMillis() - vstart);
 
         // Shut down data stream
         set("ENABLE_SEND_DATA", "0");
@@ -152,7 +159,7 @@ public class TrackerConnection {
         logger.debug("Set {} to {}, got response {}", opt, to, resp);
     }
 
-    String get(String opt) throws IOException {
+    String get(String opt) {
         out.print("<GET ID=\"" + opt + "\" />\r\n");
         out.flush();
 
@@ -165,6 +172,7 @@ public class TrackerConnection {
             return;
         }
         
+        logger.info("Requesting data stream from tracker server");
         set("ENABLE_SEND_TIME", "1");
         set("ENABLE_SEND_POG_BEST", "1");
         set("ENABLE_SEND_POG_FIX", "1");
@@ -185,6 +193,7 @@ public class TrackerConnection {
             return;
         }
         
+        logger.info("Stopping data stream from tracker server");
         set("ENABLE_SEND_DATA", "0");
 
         listeningThread.interrupt();

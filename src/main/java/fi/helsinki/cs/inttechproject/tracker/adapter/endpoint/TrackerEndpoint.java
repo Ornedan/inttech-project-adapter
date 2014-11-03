@@ -25,7 +25,7 @@ public class TrackerEndpoint {
     private static final Gson GSON = new Gson();
     private final Logger logger;
     
-    private TrackerConnection conn;
+    private static TrackerConnection conn = new TrackerConnection();
     
     /** Currently open websocket sessions. */
     private static final Set<Session> sessions = Collections
@@ -34,13 +34,6 @@ public class TrackerEndpoint {
 
     public TrackerEndpoint() {
         logger = LogManager.getLogger(TrackerEndpoint.class);
-    }
-
-    private synchronized TrackerConnection getConn() {
-        if(conn == null)
-            conn = new TrackerConnection();
-        
-        return conn;
     }
     
     private void sendEyeData(EyeData data) {
@@ -67,23 +60,24 @@ public class TrackerEndpoint {
 
     @OnMessage
     public void onMessage(final Session session, final String msg) {
+        logger.debug("Got websocket command: '{}'", msg);
         switch (msg) {
         case "connect":
-            getConn().connect();
+            conn.connect();
             break;
         case "disconnect":
-            getConn().disconnect();
+            conn.disconnect();
             break;
         case "calibrate":
-            getConn().calibrate();
+            conn.calibrate();
             break;
         case "start-stream":
-            getConn().startData((EyeData data) -> {
+            conn.startData((EyeData data) -> {
                 sendEyeData(data);
             });
             break;
         case "end-stream":
-            getConn().stopData();
+            conn.stopData();
             break;
         default:
             logger.error("Got unknown command: {}", msg);
