@@ -80,7 +80,7 @@ public class TrackerConnection {
 
         do {
             String line = in.nextLine();
-            System.out.println(line);
+            //System.out.println(line);
 
             if (line.contains("ID=\"CALIB_RESULT\""))
                 break;
