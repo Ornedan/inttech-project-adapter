@@ -16,8 +16,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 
+import fi.helsinki.cs.inttechproject.tracker.adapter.EyeData;
 import fi.helsinki.cs.inttechproject.tracker.adapter.TrackerConnection;
-import fi.helsinki.cs.inttechproject.tracker.adapter.TrackerConnection.EyeData;
 
 @ServerEndpoint("/tracker")
 public class TrackerEndpoint {
@@ -79,6 +79,15 @@ public class TrackerEndpoint {
         case "end-stream":
             conn.stopData();
             break;
+            
+        case "setup":
+            conn.connect();
+            conn.calibrate();
+            conn.startData((EyeData data) -> {
+                sendEyeData(data);
+            });
+            break;
+            
         default:
             logger.error("Got unknown command: {}", msg);
         }
