@@ -41,7 +41,7 @@ public class TrackerEndpoint {
             if(session.isOpen())
                 try {
                     session.getBasicRemote().sendText(GSON.toJson(data));
-                } catch(IOException e) {
+                } catch(IllegalStateException | IOException e) {
                     logger.error("Exception while sending eye data", e);
                 }
     }
