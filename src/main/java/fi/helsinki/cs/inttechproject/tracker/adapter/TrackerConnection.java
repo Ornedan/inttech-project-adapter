@@ -217,13 +217,36 @@ public class TrackerConnection {
         return in.nextLine();
     }
     
-    private static final Pattern foo = Pattern.compile("LEYEV=\"(\\d+)\"");
-    private static final Pattern bar = Pattern.compile("REYEV=\"(\\d+)\"");
+    private static final Pattern bvP = Pattern.compile("BPOGX=\"(\\d+)\"");
+    private static final Pattern bxP = Pattern.compile("BPOGX=\"([-]?\\d+\\.\\d+)\"");
+    private static final Pattern byP = Pattern.compile("BPOGY=\"([-]?\\d+\\.\\d+)\"");
 
     private EyeData parseEyeData(String line) {
-        System.out.println(line);
+        // System.out.println(line);
+
+        Matcher vm = bvP.matcher(line);
+        Matcher xm = bxP.matcher(line);
+        Matcher ym = byP.matcher(line);
+
+        // Is this even an eye data line?
+        if(!vm.find())
+            return null;
         
-        return new EyeData();
+        xm.find();
+        ym.find();
+
+        String v = vm.group(1);
+        String x = xm.group(1);
+        String y = ym.group(1);
+        
+        EyeData data = new EyeData();
+        data.bestValid = "1".equals(v);
+        data.bestX = Double.valueOf(x);
+        data.bestY = Double.valueOf(y);
+        
+        logger.debug("Got eye data: {}", data);
+        
+        return data;
     }
     
     public interface TrackerListener {
