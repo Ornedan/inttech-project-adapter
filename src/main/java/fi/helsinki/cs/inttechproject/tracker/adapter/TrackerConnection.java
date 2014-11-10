@@ -113,7 +113,9 @@ public class TrackerConnection {
             while (!Thread.interrupted() && !end.get()) {
                 String line = nextLine();
                 EyeData parsed = parseEyeData(line);
-                listener.eyeData(parsed);
+                
+                if(parsed != null)
+                    listener.eyeData(parsed);
             }
         },"tracker-listening-thread");
         
@@ -217,7 +219,7 @@ public class TrackerConnection {
         return in.nextLine();
     }
     
-    private static final Pattern bvP = Pattern.compile("BPOGX=\"(\\d+)\"");
+    private static final Pattern bvP = Pattern.compile("BPOGV=\"(\\d+)\"");
     private static final Pattern bxP = Pattern.compile("BPOGX=\"([-]?\\d+\\.\\d+)\"");
     private static final Pattern byP = Pattern.compile("BPOGY=\"([-]?\\d+\\.\\d+)\"");
 
