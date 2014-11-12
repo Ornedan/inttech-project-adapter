@@ -34,6 +34,11 @@ public class TrackerConnection {
     }
 
     public synchronized void connect() {
+        if(socket != null) {
+            logger.warn("Request to connect to the tracker server made when already connected");
+            return; // Make sure we only have one connection at a time
+        }   
+        
         logger.debug("Attempting to connect to the tracker server");
         try {
             socket = new Socket(host, port);
@@ -47,6 +52,9 @@ public class TrackerConnection {
     }
     
     public synchronized void disconnect() {
+        if(socket == null)
+            logger.warn("Request to disconnect from the tracker server when not connected");
+        
         logger.info("Disconnecting from the tracker server");
         if (socket != null)
             try {
@@ -98,7 +106,7 @@ public class TrackerConnection {
 
     public synchronized void startData(TrackerListener listener) {
         if(listeningThread != null) {
-            logger.error("Attempt to start data stream when it's already active");
+            logger.warn("Attempt to start data stream when it's already active");
             return;
         }
         
@@ -125,7 +133,7 @@ public class TrackerConnection {
     
     public synchronized void stopData() {
         if(listeningThread == null) {
-            logger.error("Attempt to stop data stream when it's not active");
+            logger.warn("Attempt to stop data stream when it's not active");
             return;
         }
         
