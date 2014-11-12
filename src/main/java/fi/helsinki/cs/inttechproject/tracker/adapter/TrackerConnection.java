@@ -111,9 +111,9 @@ public class TrackerConnection {
         }
         
         logger.info("Requesting data stream from tracker server");
-        set("ENABLE_SEND_TIME", "1", false); // Every other bloody SET is ack'd besides this one
+        //set("ENABLE_SEND_TIME", "1", false); // Every other bloody SET is ack'd besides this one
         set("ENABLE_SEND_POG_BEST", "1");
-        set("ENABLE_SEND_POG_FIX", "1");
+        //set("ENABLE_SEND_POG_FIX", "1");
         set("ENABLE_SEND_DATA", "1");
         
         AtomicBoolean end = new AtomicBoolean(false);
