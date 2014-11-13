@@ -185,7 +185,7 @@ public class TrackerConnection {
                 }
             } else {
                 if(vstart != null)
-                    logger.debug("Tracker lost eyes");
+                    logger.debug("Tracker lost eyes after {} msec", (System.currentTimeMillis() - vstart));
                 
                 vstart = null;
             }
