@@ -81,27 +81,32 @@ public class TrackerConnection {
      * - Hide camera screen
      * - Run calibration process
      */
-    public synchronized void calibrate() {
-        logger.info("Starting calibration process");
-        waitUntilEyes();
-
-        set("CALIBRATE_SHOW", "1");
-        set("CALIBRATE_START", "1");
-
-        do {
-            String line = nextLine();
-            //System.out.println(line);
-
-            if (line.contains("ID=\"CALIB_RESULT\""))
-                break;
-        } while (true);
+    public void calibrate() {
+        if(this.listeningThread != null)
+            stopData();
         
-        // Show summary
-        String summary = get("CALIBRATE_RESULT_SUMMARY");
-        logger.info("Calibration result: {}", summary);
+        synchronized(this) {
+            logger.info("Starting calibration process");
+            waitUntilEyes();
 
-        set("CALIBRATE_START", "0");
-        set("CALIBRATE_SHOW", "0");
+            set("CALIBRATE_SHOW", "1");
+            set("CALIBRATE_START", "1");
+
+            do {
+                String line = nextLine();
+                //System.out.println(line);
+
+                if (line.contains("ID=\"CALIB_RESULT\""))
+                    break;
+            } while (true);
+            
+            // Show summary
+            String summary = get("CALIBRATE_RESULT_SUMMARY");
+            logger.info("Calibration result: {}", summary);
+
+            set("CALIBRATE_START", "0");
+            set("CALIBRATE_SHOW", "0");
+        }
     }
 
     public synchronized void startData(TrackerListener listener) {
@@ -128,21 +133,37 @@ public class TrackerConnection {
         },"tracker-listening-thread");
         
         stopListeningThread = () -> end.set(true);
+        
+        listeningThread.setDaemon(true);
         listeningThread.start();
     }
     
-    public synchronized void stopData() {
-        if(listeningThread == null) {
-            logger.warn("Attempt to stop data stream when it's not active");
+    public void stopData() {
+        synchronized (this) {
+            if (listeningThread == null) {
+                logger.warn("Attempt to stop data stream when it's not active");
+                return;
+            }
+
+            logger.info("Stopping data stream from tracker server");
+
+            stopListeningThread.run();
+            //listeningThread.interrupt();
+        }
+
+        try {
+            listeningThread.join();
+        } catch (InterruptedException e) {
             return;
         }
-        
-        logger.info("Stopping data stream from tracker server");
-        set("ENABLE_SEND_DATA", "0");
 
-        stopListeningThread.run();
-        stopListeningThread = null;
-        listeningThread = null;
+        synchronized (this) {
+            set("ENABLE_SEND_DATA", "0");
+            set("ENABLE_SEND_POG_BEST", "0");
+
+            stopListeningThread = null;
+            listeningThread = null;
+        }
     }
 
     private void waitUntilEyes() {
@@ -211,8 +232,23 @@ public class TrackerConnection {
         out.flush();
         
         if(hasAck) {
-            String resp = nextLine();
-            logger.debug("Set {} to {}, got response {}", opt, to, resp);
+            Pattern pat = Pattern.compile("<ACK ID=\"" + opt + "\"");
+            
+            while(true)
+            {
+                String line = nextLine();
+                Matcher match = pat.matcher(line);
+                
+                if(match.find())
+                {
+                    logger.debug("Set {} to {}, got response {}", opt, to, line);
+                    break;
+                }
+                else
+                    logger.debug(
+                            "Skipped line while waiting for ack for SET {}={}: {}",
+                            opt, to, line);
+            }
         }
     }
 
