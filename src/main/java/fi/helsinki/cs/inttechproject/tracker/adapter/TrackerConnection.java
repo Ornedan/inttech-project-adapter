@@ -13,6 +13,15 @@ import org.apache.logging.log4j.Logger;
 
 public class TrackerConnection {
 
+    // Response extraction regexes
+    private static final Pattern leyevP = Pattern.compile("LEYEV=\"(\\d+)\"");
+    private static final Pattern reyevP = Pattern.compile("REYEV=\"(\\d+)\"");
+    
+    private static final Pattern bpogvP = Pattern.compile("BPOGV=\"(\\d+)\"");
+    private static final Pattern bpogxP = Pattern.compile("BPOGX=\"([-]?\\d+\\.\\d+)\"");
+    private static final Pattern bpogyP = Pattern.compile("BPOGY=\"([-]?\\d+\\.\\d+)\"");
+    
+    
     // Tracker server
     static String host = "localhost";
     static int port = 4242;
@@ -119,6 +128,8 @@ public class TrackerConnection {
         //set("ENABLE_SEND_TIME", "1", false); // Every other bloody SET is ack'd besides this one
         set("ENABLE_SEND_POG_BEST", "1");
         //set("ENABLE_SEND_POG_FIX", "1");
+        set("ENABLE_SEND_EYE_LEFT", "1");
+        set("ENABLE_SEND_EYE_RIGHT", "1");
         set("ENABLE_SEND_DATA", "1");
         
         AtomicBoolean end = new AtomicBoolean(false);
@@ -160,6 +171,8 @@ public class TrackerConnection {
         synchronized (this) {
             set("ENABLE_SEND_DATA", "0");
             set("ENABLE_SEND_POG_BEST", "0");
+            set("ENABLE_SEND_EYE_LEFT", "0");
+            set("ENABLE_SEND_EYE_RIGHT", "0");
 
             stopListeningThread = null;
             listeningThread = null;
@@ -180,17 +193,14 @@ public class TrackerConnection {
 
         // Wait until both eyes (and pupils?) are noted valid for a continuous
         // 3 second span
-        Pattern leye = Pattern.compile("LEYEV=\"(\\d+)\"");
-        Pattern reye = Pattern.compile("REYEV=\"(\\d+)\"");
-
         Long vstart = null;
 
         do {
             String line = nextLine();
             //System.out.println(line);
 
-            Matcher lm = leye.matcher(line);
-            Matcher rm = reye.matcher(line);
+            Matcher lm = leyevP.matcher(line);
+            Matcher rm = reyevP.matcher(line);
 
             lm.find();
             rm.find();
@@ -262,17 +272,15 @@ public class TrackerConnection {
     private synchronized String nextLine() {
         return in.nextLine();
     }
-    
-    private static final Pattern bvP = Pattern.compile("BPOGV=\"(\\d+)\"");
-    private static final Pattern bxP = Pattern.compile("BPOGX=\"([-]?\\d+\\.\\d+)\"");
-    private static final Pattern byP = Pattern.compile("BPOGY=\"([-]?\\d+\\.\\d+)\"");
 
     private EyeData parseEyeData(String line) {
         // System.out.println(line);
 
-        Matcher vm = bvP.matcher(line);
-        Matcher xm = bxP.matcher(line);
-        Matcher ym = byP.matcher(line);
+        Matcher vm = bpogvP.matcher(line);
+        Matcher xm = bpogxP.matcher(line);
+        Matcher ym = bpogyP.matcher(line);
+        Matcher lm = leyevP.matcher(line);
+        Matcher rm = reyevP.matcher(line);
 
         // Is this even an eye data line?
         if(!vm.find())
@@ -280,15 +288,21 @@ public class TrackerConnection {
         
         xm.find();
         ym.find();
+        lm.find();
+        rm.find();
 
         String v = vm.group(1);
         String x = xm.group(1);
         String y = ym.group(1);
+        String lv = lm.group(1);
+        String rv = lm.group(1);
         
         EyeData data = new EyeData();
         data.bestValid = "1".equals(v);
         data.bestX = Double.valueOf(x);
         data.bestY = Double.valueOf(y);
+        data.leftEyeOK = "1".equals(lv);
+        data.rightEyeOK = "1".equals(rv);
         
         logger.debug("Got eye data: {}", data);
         

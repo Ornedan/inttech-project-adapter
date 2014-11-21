@@ -5,9 +5,13 @@ public class EyeData {
     double bestX;
     double bestY;
     
+    boolean leftEyeOK;
+    boolean rightEyeOK;
+    
     @Override
     public String toString() {
         return "EyeData [bestValid=" + bestValid + ", bestX=" + bestX
-                + ", bestY=" + bestY + "]";
+                + ", bestY=" + bestY + ", leftEyeOK=" + leftEyeOK
+                + ", rightEyeOK=" + rightEyeOK + "]";
     }
 }
