@@ -142,15 +142,16 @@ public class TrackerConnection {
                     acceptableCalibration = true;
 
                 set("CALIBRATE_START", "0");
+                set("CALIBRATE_SHOW", "0");
                 
                 if(!acceptableCalibration) {
-                    set("CALIBRATE_SHOW", "1");
+                    set("TRACKER_DISPLAY", "1");
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         // Meh
                     }
-                    set("CALIBRATE_SHOW", "0");
+                    set("TRACKER_DISPLAY", "0");
                 }
             }
         } while (!acceptableCalibration);
