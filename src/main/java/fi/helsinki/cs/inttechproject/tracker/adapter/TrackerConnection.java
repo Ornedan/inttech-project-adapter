@@ -143,6 +143,13 @@ public class TrackerConnection {
 
                 set("CALIBRATE_START", "0");
                 set("CALIBRATE_SHOW", "0");
+                
+                if(!acceptableCalibration)
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        // Meh
+                    }
             }
         } while (!acceptableCalibration);
     }
