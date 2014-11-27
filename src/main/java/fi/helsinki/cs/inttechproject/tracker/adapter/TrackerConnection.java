@@ -130,7 +130,7 @@ public class TrackerConnection {
                 double aveErr = Double.parseDouble(avem.group(1));
                 int validPoints = Integer.parseInt(validm.group(1));
                 
-                if(validPoints < 6) {
+                if(validPoints < 4) {
                     logger.info("Too many calibration points were invalid (need at least 6), rerunning");
                     acceptableCalibration = false;
                 }
