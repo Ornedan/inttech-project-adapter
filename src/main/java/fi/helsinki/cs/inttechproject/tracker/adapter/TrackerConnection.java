@@ -222,7 +222,8 @@ public class TrackerConnection {
 
         // Wait until both eyes (and pupils?) are noted valid for a continuous
         // 3 second span
-        Long vstart = null;
+        Long vlstart = null;
+        Long vrstart = null;
 
         do {
             String line = nextLine();
@@ -238,20 +239,36 @@ public class TrackerConnection {
             String rv = lm.group(1);
             //System.out.printf("lv: %s; rv: %s\n", lv, rv);
 
-            if ("1".equals(lv) && "1".equals(rv)) { // Valid?
-                if (vstart == null) { // New validity period?
-                    vstart = System.currentTimeMillis();
-                    logger.debug("Tracker identified both eyes");
+            if("1".equals(lv)) {
+                if(vlstart == null) {
+                    vlstart = System.currentTimeMillis();
+                    logger.debug("Tracker identified left eye");
                 }
-            } else {
-                if(vstart != null)
-                    logger.debug("Tracker lost eyes after {} msec", (System.currentTimeMillis() - vstart));
-                
-                vstart = null;
             }
-        } while (vstart == null || (System.currentTimeMillis() - vstart) <= 200);
+            else {
+                if(vlstart != null)
+                    logger.debug("Tracker lost left eye after {} msec",(System.currentTimeMillis() - vlstart));
+                vlstart = null;
+            }
+            
+            if("1".equals(rv)) {
+                if(vrstart == null) {
+                    vrstart = System.currentTimeMillis();
+                    logger.debug("Tracker identified right eye");
+                }
+            }
+            else {
+                if(vrstart != null)
+                    logger.debug("Tracker lost right eye after {} msec",(System.currentTimeMillis() - vrstart));
+                vrstart = null;
+            }
+            
+            if(vlstart != null && vrstart != null)
+                logger.debug("Tracker has both eyes");
+        } while ((vlstart == null || (System.currentTimeMillis() - vlstart) <= 200)
+              && (vrstart == null || (System.currentTimeMillis() - vrstart) <= 200));
         
-        logger.info("Tracker has seen both eyes for {} msec, OK", System.currentTimeMillis() - vstart);
+        logger.info("Tracker has seen both eyes for {} msec, OK", System.currentTimeMillis() - Math.max(vlstart, vrstart));
 
         // Shut down data stream
         set("ENABLE_SEND_DATA", "0");
