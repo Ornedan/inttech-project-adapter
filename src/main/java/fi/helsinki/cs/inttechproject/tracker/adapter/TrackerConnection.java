@@ -220,7 +220,7 @@ public class TrackerConnection {
                 
                 vstart = null;
             }
-        } while (vstart == null || (System.currentTimeMillis() - vstart) <= 1500);
+        } while (vstart == null || (System.currentTimeMillis() - vstart) <= 200);
         
         logger.info("Tracker has seen both eyes for {} msec, OK", System.currentTimeMillis() - vstart);
 
