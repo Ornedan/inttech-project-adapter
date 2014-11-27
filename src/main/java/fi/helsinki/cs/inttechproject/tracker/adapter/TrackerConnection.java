@@ -13,13 +13,19 @@ import org.apache.logging.log4j.Logger;
 
 public class TrackerConnection {
 
-    // Response extraction regexes
-    private static final Pattern leyevP = Pattern.compile("LEYEV=\"(\\d+)\"");
-    private static final Pattern reyevP = Pattern.compile("REYEV=\"(\\d+)\"");
+    private static final String intGroup = "\"(\\d+)\"";
+    private static final String decGroup = "\"([-]?\\d+\\.\\d+)\"";
     
-    private static final Pattern bpogvP = Pattern.compile("BPOGV=\"(\\d+)\"");
-    private static final Pattern bpogxP = Pattern.compile("BPOGX=\"([-]?\\d+\\.\\d+)\"");
-    private static final Pattern bpogyP = Pattern.compile("BPOGY=\"([-]?\\d+\\.\\d+)\"");
+    // Response extraction regexes
+    private static final Pattern leyevP = Pattern.compile("LEYEV=" + intGroup);
+    private static final Pattern reyevP = Pattern.compile("REYEV=" + intGroup);
+    
+    private static final Pattern aveerrorP = Pattern.compile("AVE_ERROR=" + decGroup);
+    private static final Pattern validpointsP = Pattern.compile("VALID_POINTS=" + intGroup);
+    
+    private static final Pattern bpogvP = Pattern.compile("BPOGV=" + intGroup);
+    private static final Pattern bpogxP = Pattern.compile("BPOGX=" + decGroup);
+    private static final Pattern bpogyP = Pattern.compile("BPOGY=" + decGroup);
     
     
     // Tracker server
@@ -94,28 +100,51 @@ public class TrackerConnection {
         if(this.listeningThread != null)
             stopData();
         
-        synchronized(this) {
-            logger.info("Starting calibration process");
-            waitUntilEyes();
+        boolean acceptableCalibration;
+        do {
+            synchronized (this) {
+                logger.info("Starting calibration process");
+                waitUntilEyes();
 
-            set("CALIBRATE_SHOW", "1");
-            set("CALIBRATE_START", "1");
+                set("CALIBRATE_SHOW", "1");
+                set("CALIBRATE_START", "1");
 
-            do {
-                String line = nextLine();
-                //System.out.println(line);
+                do {
+                    String line = nextLine();
+                    // System.out.println(line);
 
-                if (line.contains("ID=\"CALIB_RESULT\""))
-                    break;
-            } while (true);
-            
-            // Show summary
-            String summary = get("CALIBRATE_RESULT_SUMMARY");
-            logger.info("Calibration result: {}", summary);
+                    if (line.contains("ID=\"CALIB_RESULT\""))
+                        break;
+                } while (true);
 
-            set("CALIBRATE_START", "0");
-            set("CALIBRATE_SHOW", "0");
-        }
+                // Show summary
+                String summary = get("CALIBRATE_RESULT_SUMMARY");
+                logger.info("Calibration result: {}", summary);
+
+                Matcher avem = aveerrorP.matcher(summary);
+                Matcher validm = validpointsP.matcher(summary);
+
+                avem.find();
+                validm.find();
+
+                double aveErr = Double.parseDouble(avem.group(1));
+                int validPoints = Integer.parseInt(validm.group(1));
+                
+                if(validPoints < 9) {
+                    logger.info("Some calibration points were invalid, rerunning");
+                    acceptableCalibration = false;
+                }
+                else if(aveErr >= 40d) {
+                    logger.info("Calibration error was too high, rerunning");
+                    acceptableCalibration = false;
+                }
+                else
+                    acceptableCalibration = true;
+
+                set("CALIBRATE_START", "0");
+                set("CALIBRATE_SHOW", "0");
+            }
+        } while (!acceptableCalibration);
     }
 
     public synchronized void startData(TrackerListener listener) {
