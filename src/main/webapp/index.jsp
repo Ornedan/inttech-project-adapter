@@ -4,7 +4,7 @@
 </head>
 <body>
 	<script type="text/javascript">
-		var wsUri = "ws://localhost:8080/tracker-adapter/tracker";
+		var wsUri = window.location.toString().replace("http","ws") + "tracker";
 
 		function init() {
 			output = document.getElementById("output");
@@ -45,10 +45,8 @@
 		window.addEventListener("load", init, false);
 	</script>
 	<div style="text-align: center;">
-		<form action="">
-			<input onclick="send_message()" value="Send" type="button"> <input
-				id="textID" name="message" value="" type="text"><br>
-		</form>
+		<input onclick="send_message()" value="Send" type="button">
+		<input id="textID" name="message" value="" type="text"><br>
 	</div>
 	<div id="output"></div>
 </body>
