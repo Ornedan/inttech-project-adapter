@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import fi.helsinki.cs.inttechproject.tracker.adapter.EyeData;
 import fi.helsinki.cs.inttechproject.tracker.adapter.TrackerConnection;
 
-@ServerEndpoint("/tracker")
+@ServerEndpoint("/tracker-adapter/tracker")
 public class TrackerEndpoint {
     
     private static final Gson GSON = new Gson();

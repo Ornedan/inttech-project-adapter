@@ -4,7 +4,7 @@
 </head>
 <body>
 	<script type="text/javascript">
-		var wsUri = window.location.toString().replace("http","ws") + "tracker";
+		var wsUri = window.location.toString().replace("http","ws") + "tracker-adapter/tracker";
 
 		function init() {
 			output = document.getElementById("output");
